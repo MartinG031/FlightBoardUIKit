@@ -60,6 +60,7 @@ final class FlightRowView: UIView, UITextFieldDelegate {
     var onCustomAirlineChange: ((String) -> Void)?
     var onTextChange: ((FlightField, String) -> Void)?
     var onDigitFieldTap: ((FlightField, String) -> Void)?
+    var onDigitFieldLongPress: ((FlightField, String) -> Void)?
     var onEditingBegan: (() -> Void)?
     var onEditingFinished: (() -> Void)?
 
@@ -160,6 +161,9 @@ final class FlightRowView: UIView, UITextFieldDelegate {
         for (index, field) in timeFields.enumerated() {
             field.tag = index
             field.addTarget(self, action: #selector(timeCellTapped(_:)), for: .touchUpInside)
+            let longPress = UILongPressGestureRecognizer(target: self, action: #selector(timeCellLongPressed(_:)))
+            longPress.minimumPressDuration = 0.35
+            field.addGestureRecognizer(longPress)
         }
 
         customAirlineField.addTarget(self, action: #selector(customAirlineEdited), for: .editingChanged)
@@ -283,6 +287,16 @@ final class FlightRowView: UIView, UITextFieldDelegate {
 
     @objc private func timeCellTapped(_ sender: FlightDigitCellView) {
         digitCellTapped(.time(sender.tag))
+    }
+
+    @objc private func timeCellLongPressed(_ recognizer: UILongPressGestureRecognizer) {
+        guard
+            recognizer.state == .began,
+            let sender = recognizer.view as? FlightDigitCellView
+        else { return }
+
+        onEditingBegan?()
+        onDigitFieldLongPress?(.time(sender.tag), value(for: .time(sender.tag)))
     }
 
     private func digitCellTapped(_ field: FlightField) {

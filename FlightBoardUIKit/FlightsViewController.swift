@@ -5,6 +5,11 @@ final class FlightsViewController: UIViewController {
         static let maxDigitCount = 4
     }
 
+    private enum DigitActivationMode {
+        case primaryTap
+        case manualInput
+    }
+
     private var store: FlightEntriesStore?
     private let scrollView = UIScrollView()
     private let rowsView = FlightRowsView()
@@ -255,7 +260,11 @@ final class FlightsViewController: UIViewController {
         }
         rowView.onDigitFieldTap = { [weak self, id = entry.id, weak rowView] field, value in
             guard let self, let rowView else { return }
-            self.activateDigitField(rowID: id, rowView: rowView, field: field, value: value)
+            self.activateDigitField(rowID: id, rowView: rowView, field: field, value: value, mode: .primaryTap)
+        }
+        rowView.onDigitFieldLongPress = { [weak self, id = entry.id, weak rowView] field, value in
+            guard let self, let rowView else { return }
+            self.activateDigitField(rowID: id, rowView: rowView, field: field, value: value, mode: .manualInput)
         }
         rowView.onEditingFinished = { [weak self] in
             self?.scheduleSort()
@@ -286,11 +295,12 @@ final class FlightsViewController: UIViewController {
         rowID: FlightEntry.ID,
         rowView: FlightRowView,
         field: FlightRowView.FlightField,
-        value: String
+        value: String,
+        mode: DigitActivationMode
     ) {
         cancelPendingSort()
 
-        if case .time = field {
+        if case .time = field, mode == .primaryTap {
             sharedDigitInput.resignFirstResponder()
             clearActiveDigitSelection()
             applyDigitValue(timestampFormatter.string(from: Date()), rowID: rowID, rowView: rowView, field: field)
